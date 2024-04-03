@@ -1,0 +1,68 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates (Ubuntu)
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: install updates (CentOS)
+    yum:
+      name: '*'
+      update_cache: yes
+    changed_when: false
+    when: ansible_distribution == "CentOS"
+
+- hosts: ubuntu
+  become: true
+  tasks:
+
+  - name: Install UFW
+    apt:
+      name: ufw  
+      state: present
+
+  - name: Enable UFW
+    ufw:
+      state: enabled
+
+  - name: Deny SSH
+    ufw:
+      rule: deny
+      name: OpenSSH
+
+
+  - name: Reload UFW
+    ufw:
+      state: reloaded
+
+
+- hosts: centos
+  become: true
+  tasks:
+
+  - name: Install Firewalld
+    yum:
+      name: firewalld
+      state: present
+
+  - name: Enable Firewalld
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
+
+  - name: Deny SSH
+    firewalld:
+      service: ssh
+      permanent: yes
+      state: disabled
+      immediate: yes  
+
+  - name: Reload Firewalld
+    firewalld:
+      state: enabled
